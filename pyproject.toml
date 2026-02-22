@@ -1,6 +1,6 @@
 # see https://flit.pypa.io/en/latest/pyproject_toml.html
 [build-system]
-requires = ["hatchling", "setuptools"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
