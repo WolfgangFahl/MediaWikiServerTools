@@ -29,7 +29,7 @@ dependencies = [
     'lxml',
     # https://pypi.org/project/PyMySQL/
     'PyMySQL>=1.1.1',
-    # https://github.com/juupje/pyMogwai
+    # https://pypi.org/project/pyMogwai/
     "pyMogwai>=0.1.1",
 ]
 
