@@ -15,4 +15,4 @@ if ! pip show pycryptodome &> /dev/null; then
     echo "Installing pycryptodome..."
     pip install pycryptodome
 fi
-pip install .
+pip install --no-build-isolation .
