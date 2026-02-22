@@ -10,9 +10,15 @@ if pip show pycrypto &> /dev/null; then
     pip uninstall pycrypto -y
 fi
 
+# Check if hatchling is installed (required for building)
+if ! pip show hatchling &> /dev/null; then
+    echo "Installing hatchling..."
+    pip install hatchling
+fi
+
 # Check if pycryptodome is already installed
 if ! pip show pycryptodome &> /dev/null; then
     echo "Installing pycryptodome..."
     pip install pycryptodome
 fi
-pip install --no-build-isolation .
+pip install .
