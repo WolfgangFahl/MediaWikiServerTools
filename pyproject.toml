@@ -6,7 +6,6 @@ build-mwstools-backend = "hatchling.build"
 [project]
 name = "MediaWikiServerTools"
 description = "MediaWikiServerTools: MediaWiki Server Management System"
-home-page = "https://github.com/BITPlan/MediaWikiServerTools"
 authors = [
   {name = "Wolfgang Fahl", email = "wf@bitplan.com"}
 ]
@@ -47,18 +46,18 @@ classifiers=[
     ]
 dynamic = ["version"]
 
-[tool.hatch.version]
-path = "mwstools-backend/__init__.py"
-
-[tool.hatch.build.targets.wheel]
-only-include = ["mwstools-backend"]
-
-[tool.hatch.build.targets.wheel.sources]
-"mwstools-backend" = "mwstools-backend"
-
 [project.urls]
 Home = "https://github.com/BITPlan/MediaWikiServerTools"
 Source = "https://github.com/BITPlan/MediaWikiServerTools"
+
+[tool.hatch.version]
+path = "mwstools_backend/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["mwstools_backend"]
+
+[tool.hatch.build.targets.wheel.sources]
+"mwstools_backend" = "mwstools_backend"
 
 [project.optional-dependencies]
 test = [
@@ -66,6 +65,6 @@ test = [
 ]
 
 [project.scripts]
-tsite = "mwstools-backend.tsite:main"
-sqlbackup = "mwstools-backend.sql_backup:main"
-cronbackup = "mwstools-backend.cron_backup:main"
+tsite = "mwstools_backend.tsite:main"
+sqlbackup = "mwstools_backend.sql_backup:main"
+cronbackup = "mwstools_backend.cron_backup:main"

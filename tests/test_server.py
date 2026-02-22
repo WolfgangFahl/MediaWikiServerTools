@@ -8,7 +8,7 @@ import unittest
 
 from basemkit.basetest import Basetest
 
-from backend.server import Server, Servers
+from mwstools_backend.server import Server, Servers
 
 
 class TestServer(Basetest):

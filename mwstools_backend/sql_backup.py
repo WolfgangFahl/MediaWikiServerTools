@@ -5,6 +5,7 @@ Converted from bash script to Python using Remote class
 
 @author: wf
 """
+
 import argparse
 import subprocess
 import sys
@@ -15,7 +16,7 @@ from typing import List
 from basemkit.persistent_log import Log
 from tqdm import tqdm
 
-from backend.remote import Remote
+from mwstools_backend.remote import Remote
 
 
 class SqlBackup:

@@ -213,7 +213,9 @@ class RunConfig:
     ignore_container: bool = False
     # options for multi command handling
     stop_on_error: bool = True  # if True do not continue when an error occurs
-    as_single_cmd: bool = False  # if True combine all commands with ';' separator to a single long command
+    as_single_cmd: bool = (
+        False  # if True combine all commands with ';' separator to a single long command
+    )
     # options for rsync and sudo viatemp
     update: bool = False  # update: Force update even if sentinel_file exists
     uid: Optional[int] = None  # User ID for ownership

@@ -10,7 +10,7 @@ import unittest
 
 from basemkit.basetest import Basetest
 
-from backend.remote import Remote
+from mwstools_backend.remote import Remote
 
 
 def _ssh_available(host: str) -> bool:
