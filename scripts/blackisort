@@ -1,0 +1,8 @@
+#!/bin/bash
+# WF 2025-07-23
+packages="tests backend"
+for package in $packages
+do
+  isort $package/*.py
+  black $package/*.py
+done
