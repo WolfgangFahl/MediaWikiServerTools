@@ -14,20 +14,20 @@ import requests
 from basemkit.yamlable import lod_storable
 from lodstorage.lod import LOD
 from mogwai.core import MogwaiGraph
-
 from tqdm import tqdm
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 
-from backend.html_table import HtmlTables
-from backend.remote import Remote
-from backend.wikibackup import WikiBackup
+from mwstools_backend.html_table import HtmlTables
+from mwstools_backend.remote import Remote
+from mwstools_backend.wikibackup import WikiBackup
 
 
 class Link:
     """
     copy of https://github.com/WolfgangFahl/nicegui_widgets/blob/main/ngwidgets/widgets.py to avoid dependency
     """
+
     blue = "color: blue;text-decoration: underline;"
 
     @staticmethod

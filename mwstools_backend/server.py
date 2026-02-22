@@ -18,8 +18,8 @@ from basemkit.persistent_log import Log
 from basemkit.yamlable import lod_storable
 from lodstorage.query import EndpointManager
 
-from backend.remote import Remote, Tool, Tools
-from backend.site import FrontendSite, Site, WikiSite
+from mwstools_backend.remote import Remote, Tool, Tools
+from mwstools_backend.site import FrontendSite, Site, WikiSite
 
 
 @lod_storable

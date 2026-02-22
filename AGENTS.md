@@ -93,7 +93,7 @@ Order imports as follows (enforced by isort):
 
 Use relative imports within the project:
 ```python
-from backend.site import FrontendSite
+from mwstools_backend.site import FrontendSite
 ```
 
 ### Formatting
@@ -189,7 +189,7 @@ class Site:
 
 ```
 MediaWikiServerTools/
-├── backend/          # Server/backup code
+├── mwstools-backend/    # Server/backup code
 │   ├── __init__.py
 │   ├── site.py
 │   ├── sql_backup.py

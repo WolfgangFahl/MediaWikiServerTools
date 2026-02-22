@@ -10,8 +10,8 @@ import unittest
 from basemkit.basetest import Basetest
 from basemkit.shell import ShellResult
 
-from backend.server import Servers
-from backend.sql_backup import SqlBackup
+from mwstools_backend.server import Servers
+from mwstools_backend.sql_backup import SqlBackup
 
 
 def _mysql_available() -> bool:

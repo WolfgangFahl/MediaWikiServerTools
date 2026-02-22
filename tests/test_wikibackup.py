@@ -9,7 +9,7 @@ import unittest
 from basemkit.basetest import Basetest
 from wikibot3rd.wikiuser import WikiUser
 
-from backend.wikibackup import WikiBackup
+from mwstools_backend.wikibackup import WikiBackup
 
 
 class TestWikiBackup(Basetest):

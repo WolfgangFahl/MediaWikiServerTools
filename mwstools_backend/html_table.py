@@ -4,7 +4,7 @@ Created on 2022-10-25
 @author: wf
 """
 
-from backend.webscrape import WebScrape
+from mwstools_backend.webscrape import WebScrape
 
 
 class HtmlTables(WebScrape):

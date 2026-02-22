@@ -19,23 +19,22 @@ from typing import Dict, Iterable, Iterator, List, TypeVar
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from basemkit.profiler import Profiler
+from frontend.version import Version
 from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
 
-from backend.remote import Remote, RunConfig
-from backend.server import Server, Servers
-from backend.site import Site, WikiSite
-from backend.sql_backup import SqlBackup
-from frontend.version import Version
+from mwstools_backend.remote import Remote, RunConfig
+from mwstools_backend.server import Server, Servers
+from mwstools_backend.site import Site, WikiSite
+from mwstools_backend.sql_backup import SqlBackup
 
 # enable generic types
 T = TypeVar("T")
 
 
 class Checks:
-
     @classmethod
     def check_age(cls, remote: Remote, filepath: str, days: float = 1.0) -> float:
         stats = remote.get_file_stats(filepath)

@@ -11,7 +11,7 @@ from pathlib import Path
 from wikibot3rd.wikipush import WikiPush
 from wikibot3rd.wikiuser import WikiUser
 
-from backend.remote import Remote
+from mwstools_backend.remote import Remote
 
 
 class WikiBackup:

@@ -14,7 +14,7 @@ from basemkit.base_cmd import BaseCmd
 from basemkit.shell import Shell
 from expirebackups.expire import Expiration, ExpireBackups
 
-from backend.sql_backup import SqlBackup
+from mwstools_backend.sql_backup import SqlBackup
 
 
 class CronBackup(BaseCmd):
@@ -181,9 +181,7 @@ class CronBackup(BaseCmd):
                 debug=self.debug,
             )
 
-            expire_backups.doexpire(
-                withDelete=self.force, show=self.verbose
-            )
+            expire_backups.doexpire(withDelete=self.force, show=self.verbose)
 
             self.log("Expiration rules completed")
 
@@ -220,16 +218,20 @@ class CronBackup(BaseCmd):
 
             # Add progress if requested
             if self.args.progress:
-                cmd_parts.extend([
-                    "--checkpoint=1000",
-                    "--checkpoint-action=echo='%T'",
-                ])
+                cmd_parts.extend(
+                    [
+                        "--checkpoint=1000",
+                        "--checkpoint-action=echo='%T'",
+                    ]
+                )
 
-            cmd_parts.extend([
-                f"-f {archive_path}",
-                f"-C {self.backup_dir}",
-                "today",
-            ])
+            cmd_parts.extend(
+                [
+                    f"-f {archive_path}",
+                    f"-C {self.backup_dir}",
+                    "today",
+                ]
+            )
 
             cmd = " ".join(cmd_parts)
             result = self.shell.run(cmd, text=True, debug=self.debug, tee=self.verbose)
