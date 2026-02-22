@@ -1,7 +1,7 @@
 # see https://flit.pypa.io/en/latest/pyproject_toml.html
 [build-system]
 requires = ["hatchling"]
-build-backend = "hatchling.build"
+build-mwstools-backend = "hatchling.build"
 
 [project]
 name = "MediaWikiServerTools"
@@ -48,13 +48,13 @@ classifiers=[
 dynamic = ["version"]
 
 [tool.hatch.version]
-path = "backend/__init__.py"
+path = "mwstools-backend/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-only-include = ["backend"]
+only-include = ["mwstools-backend"]
 
 [tool.hatch.build.targets.wheel.sources]
-"backend" = "backend"
+"mwstools-backend" = "mwstools-backend"
 
 [project.urls]
 Home = "https://github.com/BITPlan/MediaWikiServerTools"
@@ -66,6 +66,6 @@ test = [
 ]
 
 [project.scripts]
-tsite = "backend.tsite:main"
-sqlbackup = "backend.sql_backup:main"
-cronbackup = "backend.cron_backup:main"
+tsite = "mwstools-backend.tsite:main"
+sqlbackup = "mwstools-backend.sql_backup:main"
+cronbackup = "mwstools-backend.cron_backup:main"
