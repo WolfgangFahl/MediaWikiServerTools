@@ -14,7 +14,7 @@ import requests
 from basemkit.yamlable import lod_storable
 from lodstorage.lod import LOD
 from mogwai.core import MogwaiGraph
-from ngwidgets.widgets import Link
+
 from tqdm import tqdm
 from wikibot3rd.wikiclient import WikiClient
 from wikibot3rd.wikiuser import WikiUser
@@ -22,6 +22,20 @@ from wikibot3rd.wikiuser import WikiUser
 from backend.html_table import HtmlTables
 from backend.remote import Remote
 from backend.wikibackup import WikiBackup
+
+
+class Link:
+    """
+    copy of https://github.com/WolfgangFahl/nicegui_widgets/blob/main/ngwidgets/widgets.py to avoid dependency
+    """
+    blue = "color: blue;text-decoration: underline;"
+
+    @staticmethod
+    def create(url, text, tooltip=None, target=None, style=None):
+        title = "" if tooltip is None else f" title='{tooltip}'"
+        target = "" if target is None else f" target='{target}'"
+        style = f" style='{style}'" if style else f" style='{Link.blue}'"
+        return f"<a href='{url}'{title}{target}>{text}</a>"
 
 
 @dataclass
