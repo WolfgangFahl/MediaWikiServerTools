@@ -1,7 +1,7 @@
 # see https://flit.pypa.io/en/latest/pyproject_toml.html
 [build-system]
-requires = ["hatchling"]
-build-mwstools-backend = "hatchling.build"
+requires = ["hatchling", "setuptools"]
+build-backend = "hatchling.build"
 
 [project]
 name = "MediaWikiServerTools"
