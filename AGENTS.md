@@ -14,7 +14,7 @@ YOU WILL NEVER PROCEED WITH OUT POSITIVE CONFIRMATION by go!
 MediaWikiServerTools is a Python-based MediaWiki Server Management System frontend.  It allows local and
 remote manipulation of servers with partial docker support
 It consists of:
-- `backend/` - Server and backup functionality
+- `mwstools_backend/` - Server and backup functionality
 - `tests/` - Unit tests using unittest
 
 Requires Python 3.10+.
@@ -69,15 +69,15 @@ python -m unittest tests.test_wikicms.TestWikiCMS.testWikiCMS
 ```bash
 scripts/blackisort
 ```
-This runs `isort` then `black` on `tests/` and `backend/` directories.
+This runs `isort` then `black` on `tests/` and `mwstools_backend/` directories.
 
 ### Running the Application
 
 ** CLI commands:**
 ```bash
-tsite   # backend/tsite:main
-sqlbackup  # backend/sql_backup:main
-cronbackup # backend.cron_backup:main
+tsite   # mwstools_backend/tsite:main
+sqlbackup  # mwstools_backend/sql_backup:main
+cronbackup # mwstools_backend/cron_backup:main
 ```
 
 ---
@@ -189,7 +189,7 @@ class Site:
 
 ```
 MediaWikiServerTools/
-├── mwstools-backend/    # Server/backup code
+├── mwstools_backend/    # Server/backup code
 │   ├── __init__.py
 │   ├── site.py
 │   ├── sql_backup.py
@@ -229,6 +229,6 @@ GitHub Actions workflow: `.github/workflows/build.yml`
 
 ## Additional Notes
 
-- Version is managed via hatchling in `backend/__init__.py`
+- Version is managed via hatchling in `mwstools_backend/__init__.py`
 - Package uses flit/hatchling build system
 - Follow existing code patterns when extending functionality
