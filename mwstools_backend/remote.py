@@ -213,9 +213,7 @@ class RunConfig:
     ignore_container: bool = False
     # options for multi command handling
     stop_on_error: bool = True  # if True do not continue when an error occurs
-    as_single_cmd: bool = (
-        False  # if True combine all commands with ';' separator to a single long command
-    )
+    as_single_cmd: bool = False  # if True combine all commands with ';' separator to a single long command
     # options for rsync and sudo viatemp
     update: bool = False  # update: Force update even if sentinel_file exists
     uid: Optional[int] = None  # User ID for ownership
@@ -252,7 +250,13 @@ class Remote:
     with optimized local execution when the server is the machine this service runs on
     """
 
-    def __init__(self, host: str, container: Optional[str] = None, timeout: int = 5):
+    def __init__(
+        self,
+        host: str,
+        container: Optional[str] = None,
+        timeout: int = 5,
+        run_config: RunConfig | None = None,
+    ):
         """
         Constructor
 
@@ -260,13 +264,14 @@ class Remote:
             host: The hostname of the server to connect to
             container: Optional docker container name
             timeout: the timeout for the command
+            run_config: Optional RunConfig instance to use as default for all operations
         """
         self.host = host
         self._here_host = socket.gethostname()
         self.is_local = False
         self._ip = None
         self._platform = None
-        self.run_config = RunConfig()
+        self.run_config = run_config if run_config is not None else RunConfig()
         try:
             host_ip = socket.gethostbyname(host)
             self._ip = host_ip

@@ -10,7 +10,7 @@ import unittest
 
 from basemkit.basetest import Basetest
 
-from mwstools_backend.remote import Remote
+from mwstools_backend.remote import Remote, RunConfig
 
 
 def _ssh_available(host: str) -> bool:
@@ -135,3 +135,26 @@ class TestRemote(Basetest):
             # Read back the content
             lines = remote.readlines(test_file)
             self.assertEqual(test_lines, lines)
+
+    def test_custom_run_config(self):
+        """
+        test that custom run_config is properly used
+        """
+        # Create a custom RunConfig with specific settings
+        custom_config = RunConfig(tee=True, progress=True, do_log=False)
+
+        # Create Remote instance with custom config
+        remote = Remote(host="localhost", run_config=custom_config)
+
+        # Verify the custom config is set
+        self.assertIsNotNone(remote.run_config)
+        self.assertTrue(remote.run_config.tee)
+        self.assertTrue(remote.run_config.progress)
+        self.assertFalse(remote.run_config.do_log)
+
+        # Verify default behavior (no custom config)
+        remote_default = Remote(host="localhost")
+        self.assertIsNotNone(remote_default.run_config)
+        self.assertFalse(remote_default.run_config.tee)
+        self.assertFalse(remote_default.run_config.progress)
+        self.assertTrue(remote_default.run_config.do_log)
