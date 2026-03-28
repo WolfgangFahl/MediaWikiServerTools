@@ -641,6 +641,29 @@ class Remote:
             output = result.stdout.strip()
         return output
 
+    def check_ssh_to(self, target_host: str) -> bool:
+        """
+        Check whether this remote can reach target_host via SSH.
+
+        Runs a no-op SSH command from this host to target_host using
+        BatchMode (no prompts) and a short ConnectTimeout so the check
+        never hangs.
+
+        Args:
+            target_host: hostname to probe SSH connectivity to
+
+        Returns:
+            True if SSH succeeds, False otherwise
+        """
+        cmd = (
+            f"ssh -o BatchMode=yes "
+            f"-o StrictHostKeyChecking=no "
+            f"-o ConnectTimeout={self.timeout} "
+            f"{target_host} true"
+        )
+        proc = self.run(cmd)
+        return proc.returncode == 0
+
     def avail_check(self) -> Optional[datetime]:
         """
         Returns current timestamp if local server or if SSH to server is possible.

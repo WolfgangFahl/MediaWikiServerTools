@@ -153,10 +153,28 @@ class TransferTask:
 
     def check_ssh(self) -> bool:
         """
-        check the target site is available via ssh
+        Check SSH reachability for all connections needed by the transfer:
+          1. local → target  (already established by create_TransferTask)
+          2. target → source (required for rsync pull during site sync)
         """
+        # local → target
         avail = self.target.remote.avail_check() is not None
-        return avail
+        if not avail:
+            print(f"❌ SSH local → {self.target.hostname} failed")
+            return False
+        print(f"✅ SSH local → {self.target.hostname}")
+
+        # target → source (rsync runs on target and pulls from source)
+        source_host = self.source.hostname
+        can_reach = self.target.remote.check_ssh_to(source_host)
+        if not can_reach:
+            print(
+                f"❌ SSH {self.target.hostname} → {source_host} failed"
+                f" (required for rsync site sync)"
+            )
+            return False
+        print(f"✅ SSH {self.target.hostname} → {source_host}")
+        return True
 
     def check_site_sync(self) -> bool:
         """
