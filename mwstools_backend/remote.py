@@ -457,7 +457,7 @@ class Remote:
         if run_config is None:
             run_config = self.run_config
         self.log_shell_cmd(cmd, run_config)
-        proc = self.shell.run(cmd, tee=run_config.tee, debug=run_config.debug)
+        proc = self.shell.run(cmd, tee=run_config.tee, debug=run_config.debug,timeout=int(self.run_config.timeout))
         self.log_shell_result(cmd, proc, run_config)
         return proc
 
