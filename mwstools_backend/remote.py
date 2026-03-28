@@ -202,6 +202,7 @@ class Stats:
 
 @dataclass
 class RunConfig:
+    timeout: float = 5  # default timeout for a command
     tee: bool = False
     debug: bool = False
     progress: bool = False
@@ -255,7 +256,6 @@ class Remote:
         self,
         host: str,
         container: Optional[str] = None,
-        timeout: int = 5,
         run_config: RunConfig | None = None,
     ):
         """
@@ -264,7 +264,6 @@ class Remote:
         Args:
             host: The hostname of the server to connect to
             container: Optional docker container name
-            timeout: the timeout for the command
             run_config: Optional RunConfig instance to use as default for all operations
         """
         self.host = host
@@ -287,9 +286,7 @@ class Remote:
             pass
         self.container = container
         self.shell = Shell()
-        self.timeout = timeout
         self.log = Log()
-        self.ssh_options = f"-o ConnectTimeout={self.timeout} {self.host}"
 
     def __str__(self):
         text = f"{self.host}{self.symbol}"
@@ -388,10 +385,13 @@ class Remote:
         """
         local = self.is_local
         prefix = ""
+        if run_config is None:
+            run_config = self.run_config
         if run_config is not None:
             local = local or run_config.force_local
         if not local:
-            prefix = f"ssh  {self.ssh_options}"
+            ssh_options = f"-o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout={self.run_config.timeout}"
+            prefix = f"ssh {ssh_options} {self.host}"
         if self.container:
             prefix += f" docker exec {self.container}"
         if prefix:
@@ -429,12 +429,12 @@ class Remote:
         if run_config.do_log:
             self.log.log(status, "remote", log_msg)
 
-    def log_shell_cmd(self,cmd: str, run_config: RunConfig):
+    def log_shell_cmd(self, cmd: str, run_config: RunConfig):
         """
         log the given shell cmd
         """
-        log_msg=cmd
-        status=""
+        log_msg = cmd
+        status = ""
         if run_config.do_log:
             self.log.log(status, "remote", log_msg)
 
@@ -456,8 +456,8 @@ class Remote:
         """
         if run_config is None:
             run_config = self.run_config
-        self.log_shell_cmd(cmd,run_config)
-        proc = self.shell.run(cmd, tee=run_config.tee,debug=run_config.debug)
+        self.log_shell_cmd(cmd, run_config)
+        proc = self.shell.run(cmd, tee=run_config.tee, debug=run_config.debug)
         self.log_shell_result(cmd, proc, run_config)
         return proc
 
@@ -666,13 +666,9 @@ class Remote:
         Returns:
             True if SSH succeeds, False otherwise
         """
-        cmd = (
-            f"ssh -o BatchMode=yes "
-            f"-o StrictHostKeyChecking=no "
-            f"-o ConnectTimeout={self.timeout} "
-            f"{target_host} true"
-        )
-        proc = self.run(cmd)
+        # Create a temporary Remote for the target and check if it's available
+        target_remote = Remote(host=target_host, run_config=self.run_config)
+        proc = target_remote.run("pwd")
         return proc.returncode == 0
 
     def avail_check(self) -> Optional[datetime]:
