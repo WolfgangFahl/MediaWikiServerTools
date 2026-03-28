@@ -66,6 +66,7 @@ class TransferTask:
     def __post_init__(self):
         self.force = self.args.force
         self.update = self.args.update
+        self.debug=self.args.debug
         self.use_git = self.args.git
         self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
         self.wikiClient = WikiClient.ofWikiUser(self.wikiUser)
