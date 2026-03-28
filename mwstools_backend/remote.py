@@ -203,6 +203,7 @@ class Stats:
 @dataclass
 class RunConfig:
     tee: bool = False
+    debug: bool = False
     progress: bool = False
     do_log: bool = True
     force_local: bool = False
@@ -428,6 +429,15 @@ class Remote:
         if run_config.do_log:
             self.log.log(status, "remote", log_msg)
 
+    def log_shell_cmd(self,cmd: str, run_config: RunConfig):
+        """
+        log the given shell cmd
+        """
+        log_msg=cmd
+        status=""
+        if run_config.do_log:
+            self.log.log(status, "remote", log_msg)
+
     def run_remote(
         self, cmd: str, run_config: RunConfig = None
     ) -> subprocess.CompletedProcess:
@@ -446,6 +456,7 @@ class Remote:
         """
         if run_config is None:
             run_config = self.run_config
+        self.log_shell_cmd(cmd,run_config)
         proc = self.shell.run(cmd, tee=run_config.tee)
         self.log_shell_result(cmd, proc, run_config)
         return proc

@@ -188,6 +188,8 @@ class TransferTask:
             source_path = f"{self.source.hostname}:{site_path}"
             run_config = RunConfig(
                 update=self.force or self.update,
+                do_log=self.debug,
+                debug=self.debug,
                 do_mkdir=True,
                 do_permissions=True,
                 uid=33,  # www-data
