@@ -19,7 +19,7 @@ from typing import Dict, Iterable, Iterator, List, TypeVar
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from basemkit.profiler import Profiler
-from frontend.version import Version
+from mwstools_backend.version import Version
 from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
