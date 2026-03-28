@@ -202,7 +202,7 @@ class Stats:
 
 @dataclass
 class RunConfig:
-    timeout: float = 5  # default timeout for a command
+    timeout: float = 10  # default timeout for a command
     tee: bool = False
     debug: bool = False
     progress: bool = False
@@ -343,7 +343,7 @@ class Remote:
             procs["all"] = proc
         else:
             for key, cmd in cmds.items():
-                proc = self.run(cmd)
+                proc = self.run(cmd,run_config=run_config)
                 procs[key] = proc
                 if proc.returncode != 0:
                     if run_config.stop_on_error:
@@ -457,7 +457,7 @@ class Remote:
         if run_config is None:
             run_config = self.run_config
         self.log_shell_cmd(cmd, run_config)
-        proc = self.shell.run(cmd, tee=run_config.tee, debug=run_config.debug,timeout=int(self.run_config.timeout))
+        proc = self.shell.run(cmd, tee=run_config.tee, debug=run_config.debug,timeout=int(run_config.timeout))
         self.log_shell_result(cmd, proc, run_config)
         return proc
 
