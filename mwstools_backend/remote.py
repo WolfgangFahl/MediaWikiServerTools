@@ -512,7 +512,7 @@ class Remote:
                     "chown_pre": f"sudo chown -R {uid}:{gid} {dir_path}",
                     "chmod_pre": f"sudo chmod -R g+rw  {dir_path}",
                 }
-                proc = self.run_cmds_as_single_cmd(perm_cmds)
+                proc = self.run_cmds_as_single_cmd(perm_cmds,run_config=run_config)
         return proc
 
     def rsync(
