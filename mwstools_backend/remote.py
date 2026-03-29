@@ -343,7 +343,7 @@ class Remote:
             procs["all"] = proc
         else:
             for key, cmd in cmds.items():
-                proc = self.run(cmd,run_config=run_config)
+                proc = self.run(cmd, run_config=run_config)
                 procs[key] = proc
                 if proc.returncode != 0:
                     if run_config.stop_on_error:
@@ -457,7 +457,12 @@ class Remote:
         if run_config is None:
             run_config = self.run_config
         self.log_shell_cmd(cmd, run_config)
-        proc = self.shell.run(cmd, tee=run_config.tee, debug=run_config.debug,timeout=int(run_config.timeout))
+        proc = self.shell.run(
+            cmd,
+            tee=run_config.tee,
+            debug=run_config.debug,
+            timeout=int(run_config.timeout),
+        )
         self.log_shell_result(cmd, proc, run_config)
         return proc
 
@@ -468,7 +473,9 @@ class Remote:
             path_part = target_path
         return path_part
 
-    def prepare_target_directory(self, target_path: str, run_config: RunConfig):
+    def prepare_target_directory(
+        self, target_path: str, run_config: RunConfig, recurse: bool = False
+    ):
         """
         Ensure the directory for a given target path exists and has the correct permissions.
 
@@ -483,6 +490,7 @@ class Remote:
         Args:
             target_path: Full path to target file or directory, possibly including a host prefix.
             run_config: Configuration for directory creation and permission settings.
+            recurse: If True, recursively set permissions with -R flag. Default False.
 
         Returns:
             subprocess.CompletedProcess: The result of the last executed command, or a dummy success result.
@@ -508,11 +516,12 @@ class Remote:
                         return proc
 
             if run_config.should_set_permissions:
+                recurse_flag = "-R " if recurse else ""
                 perm_cmds = {
-                    "chown_pre": f"sudo chown -R {uid}:{gid} {dir_path}",
-                    "chmod_pre": f"sudo chmod -R g+rw  {dir_path}",
+                    "chown_pre": f"sudo chown {recurse_flag}{uid}:{gid} {dir_path}",
+                    "chmod_pre": f"sudo chmod {recurse_flag}g+rw  {dir_path}",
                 }
-                proc = self.run_cmds_as_single_cmd(perm_cmds,run_config=run_config)
+                proc = self.run_cmds_as_single_cmd(perm_cmds, run_config=run_config)
         return proc
 
     def rsync(
