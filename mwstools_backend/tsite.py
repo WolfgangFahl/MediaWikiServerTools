@@ -58,6 +58,7 @@ class TransferTask:
     update: bool = (False,)
     progress: bool = True
     use_git: bool = False
+    timeout: int = 30
     query_division: int = 50
     # Non-persistent calculated fields
     log: Log = field(default=None, init=False, repr=False)
@@ -67,6 +68,7 @@ class TransferTask:
         self.force = self.args.force
         self.update = self.args.update
         self.debug=self.args.debug
+        self.timeout = self.args.timeout
         self.use_git = self.args.git
         self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
         self.wikiClient = WikiClient.ofWikiUser(self.wikiUser)
@@ -185,9 +187,10 @@ class TransferTask:
         if self.source.sitedir is not None:
             site_path = f"{self.source.sitedir}/{self.wiki_site.hostname}"
             print(f"site sync check {site_path}...")
-            marker_file = "LocalSettings.php"
+            marker_file = ".sync_done"
             source_path = f"{self.source.hostname}:{site_path}"
             run_config = RunConfig(
+                timeout=self.timeout,
                 update=self.force or self.update,
                 do_log=self.debug,
                 debug=self.debug,
@@ -894,6 +897,12 @@ class TransferSiteCmd(BaseCmd):
             "--update",
             action="store_true",
             help="update pages and images",
+        )
+        parser.add_argument(
+            "--timeout",
+            type=int,
+            default=30,
+            help="timeout in seconds for rsync and ssh operations",
         )
         parser.add_argument(
             "--profile", action="store_true", help="profile timing of steps"

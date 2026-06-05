@@ -548,8 +548,9 @@ class Remote:
             return subprocess.CompletedProcess([], 0, "", "")
         proc = self.prepare_target_directory(target_path, run_config)
         if proc.returncode == 0:
+            timeout = run_config.timeout if run_config else 30
             rsync_cmd = (
-                f"rsync -avz --no-perms --omit-dir-times {source_path}/* {target_path}"
+                f"rsync -avz --no-perms --omit-dir-times --timeout={timeout} {source_path}/* {target_path}"
             )
             proc = self.run(rsync_cmd)
 
@@ -559,6 +560,9 @@ class Remote:
                 "chmod_pre": f"sudo chmod -R g+w {target_path}",
             }
             proc = self.run_cmds_as_single_cmd(perm_cmds)
+
+        if proc.returncode == 0:
+            self.run(f"touch {marker_path}")
 
         status = "✅" if proc.returncode == 0 else "❌"
         self.log.log(status, "sync", f"synching {message}")
