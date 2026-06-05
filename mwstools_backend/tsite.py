@@ -187,6 +187,7 @@ class TransferTask:
         if self.source.sitedir is not None:
             site_path = f"{self.source.sitedir}/{self.wiki_site.hostname}"
             print(f"site sync check {site_path}...")
+            self.target.remote.run_config.timeout = self.timeout
             marker_file = ".sync_done"
             source_path = f"{self.source.hostname}:{site_path}"
             run_config = RunConfig(
