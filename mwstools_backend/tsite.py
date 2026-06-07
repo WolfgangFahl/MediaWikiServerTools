@@ -302,7 +302,12 @@ class TransferTask:
                     restore_cmd = (
                         f"pv {self.target_backup_path} | {mysqlr} -D {database}"
                     )
-                    proc = self.target.remote.run(restore_cmd)
+                    # honor the user supplied --timeout for the (potentially long)
+                    # SQL restore instead of the 10s RunConfig default (closes #6)
+                    restore_run_config = RunConfig(timeout=self.timeout)
+                    proc = self.target.remote.run(
+                        restore_cmd, run_config=restore_run_config
+                    )
                     success = proc.returncode == 0
                     result = result and success
                     if success:
