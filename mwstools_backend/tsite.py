@@ -89,16 +89,14 @@ class TransferTask:
     def login(self):
         """
         login to the source wiki
+
+        use WikiClient.login() which goes through the legacy action=login API.
+        This works reliably across MediaWiki versions (e.g. 1.35.5) for both
+        bot and regular users, whereas site.clientlogin() fails with
+        "Incorrect username or password entered" on some wikis (see issue #5).
         """
-        wu = self.wikiUser
-        # bot login
-        if "@" in wu.user:
-            self.wikiClient.login()
-        else:
-            # just fake a compatible version to allow client login
-            self.site.version = (1, 35, 5)
-            self.site.clientlogin(username=wu.user, password=wu.get_password())
-        pass
+        if not self.wikiClient.login():
+            raise Exception(f"login to {self.wikiUser.wikiId} failed")
 
     def git_target(self, target_path: str) -> subprocess.CompletedProcess:
         """
