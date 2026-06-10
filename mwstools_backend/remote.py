@@ -547,6 +547,18 @@ class Remote:
             self.log.log("✅", "sync", f"{marker_path} already exists")
             return subprocess.CompletedProcess([], 0, "", "")
         proc = self.prepare_target_directory(target_path, run_config)
+        if proc.returncode == 0 and run_config.should_set_permissions:
+            # make the existing target tree group-writable BEFORE rsync so the
+            # rsync receiver (running as a www-data group member) can create its
+            # temp files in pre-existing images/* subdirs (closes #9).
+            # g+rwX adds execute only on directories, leaving files non-executable.
+            target_on_host = self.get_path_on_target(target_path)
+            if self.get_file_stats(target_on_host) is not None:
+                pre_perm_cmds = {
+                    "chown_tree": f"sudo chown -R {run_config.uid}:{run_config.gid} {target_path}",
+                    "chmod_tree": f"sudo chmod -R g+rwX {target_path}",
+                }
+                proc = self.run_cmds_as_single_cmd(pre_perm_cmds)
         if proc.returncode == 0:
             timeout = run_config.timeout if run_config else 30
             rsync_cmd = (
