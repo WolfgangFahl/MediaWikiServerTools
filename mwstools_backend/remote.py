@@ -565,8 +565,15 @@ class Remote:
         if proc.returncode == 0:
             self.run(f"touch {marker_path}")
 
-        status = "✅" if proc.returncode == 0 else "❌"
-        self.log.log(status, "sync", f"synching {message}")
+        success = proc.returncode == 0
+        status = "✅" if success else "❌"
+        message = f"synching {message}"
+        if not success:
+            # surface the real rsync error instead of swallowing it (closes #8)
+            message += (
+                f" failed (rc={proc.returncode})\n{proc.stdout}\n{proc.stderr}"
+            )
+        self.log.log(status, "sync", message)
 
         return proc
 

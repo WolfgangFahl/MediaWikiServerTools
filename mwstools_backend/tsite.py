@@ -208,9 +208,15 @@ class TransferTask:
                 message=f"{self.wiki_site.hostname}",
                 run_config=run_config,
             )
-            if proc.returncode == 0:
-                rsync_prof.time(f" {self.wiki_site.hostname}")
-                result = True
+            if proc.returncode != 0:
+                # abort on rsync failure - do not proceed to git (closes #8)
+                print(
+                    f"❌ rsync sync {self.wiki_site.hostname} failed"
+                    f" (rc={proc.returncode})\n{proc.stdout}\n{proc.stderr}"
+                )
+                return False
+            rsync_prof.time(f" {self.wiki_site.hostname}")
+            result = True
             if self.use_git:
                 git_prof = Profiler("git commit", profile=self.args.profile)
                 proc = self.git_target(target_path=site_path)
