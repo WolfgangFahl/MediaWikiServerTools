@@ -18,7 +18,7 @@ class Version(object):
     description = "MediaWiki Server Management System - Apache Site management, SQL backups, cron-based backups "
     version = mwstools_backend.__version__
     date = "2022-11-16"
-    updated = "2026-06-07"
+    updated = "2026-06-10"
     authors = "Wolfgang Fahl"
     doc_url = "https://wiki.bitplan.com/index.php/MediaWikiServerTools"
     chat_url = "https://github.com/WolfgangFahl/MediaWikiServerTools/discussions"

@@ -552,6 +552,7 @@ class Remote:
             rsync_cmd = (
                 f"rsync -avz --no-perms --omit-dir-times --timeout={timeout} {source_path}/* {target_path}"
             )
+            print(f"⚙️ {rsync_cmd}")
             proc = self.run(rsync_cmd, run_config=run_config)
 
         if run_config.should_set_permissions and proc.returncode == 0:

@@ -5,6 +5,8 @@ Tools to transfer a mediawiki site from one server to another
 to e.g. migrate the LAMP stack elements or move from a farm based
 to a dockerized environment
 
+see also https://www.semantic-mediawiki.org/wiki/SMWCon_Fall_2020/Mediawiki_1.35_Migration
+
 @author: wf
 """
 
@@ -198,6 +200,7 @@ class TransferTask:
                 uid=33,  # www-data
                 gid=33,  # www-data
             )
+            rsync_prof = Profiler("rsync sync", profile=self.args.profile)
             proc = self.target.remote.rsync(
                 source_path=source_path,
                 target_path=site_path,
@@ -206,12 +209,13 @@ class TransferTask:
                 run_config=run_config,
             )
             if proc.returncode == 0:
-                print("✅ sync done")
+                rsync_prof.time(f" {self.wiki_site.hostname}")
                 result = True
             if self.use_git:
+                git_prof = Profiler("git commit", profile=self.args.profile)
                 proc = self.git_target(target_path=site_path)
                 if proc.returncode == 0:
-                    print("✅ git committed")
+                    git_prof.time(f" {self.wiki_site.hostname}")
                 else:
                     result = False
         return result
