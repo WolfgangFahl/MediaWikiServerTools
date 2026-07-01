@@ -79,7 +79,24 @@ class CronBackup(BaseCmd):
             help="log file path [default: %(default)s]",
         )
         # database settings
-        # the database container running the mysql instance
+        # backend selection: native client vs docker container
+        parser.add_argument(
+            "--native",
+            action="store_true",
+            help="use the native MySQL/MariaDB client (sudo mysql / sudo mysqldump -u root) "
+            "instead of a docker container",
+        )
+        parser.add_argument(
+            "--docker",
+            metavar="CN",
+            help="use the docker container CN (via the mysqlr wrapper) for MySQL access",
+        )
+        parser.add_argument(
+            "--backup-user",
+            default="backup",
+            help="OS user that owns the backup files [default: %(default)s]",
+        )
+        # the database container running the mysql instance (legacy; prefer --docker CN)
         parser.add_argument(
             "--container",
             default="family-db",
@@ -264,19 +281,26 @@ class CronBackup(BaseCmd):
             # Ensure backup directory exists
             self.backup_dir.mkdir(parents=True, exist_ok=True)
 
-            # Construct MySQL commands
-            mysql_root_cmd = self.args.mysql_root_cmd
-            if mysql_root_cmd is None:
-                # Default: use mysqlr wrapper with container
-                mysql_root_cmd = f"mysqlr --no-tty -cn {self.container}"
+            # Construct MySQL commands.
+            # Explicit --mysql-root-cmd / --mysqldump-cmd always win; otherwise the
+            # backend is chosen by --native (native client) vs docker container
+            # (--docker CN, falling back to the legacy --container default).
+            if self.args.native:
+                default_root_cmd = "sudo mysql"
+                default_dump_cmd = "sudo mysqldump -u root"
+            else:
+                cn = self.args.docker or self.container
+                default_root_cmd = f"mysqlr --no-tty -cn {cn}"
+                default_dump_cmd = f"mysqlr --no-tty -cn {cn} --dump"
 
-            mysqldump_cmd = self.args.mysqldump_cmd
-            if mysqldump_cmd is None:
-                mysqldump_cmd = f"mysqlr --no-tty -cn {self.container} --dump"
+            mysql_root_cmd = self.args.mysql_root_cmd or default_root_cmd
+            mysqldump_cmd = self.args.mysqldump_cmd or default_dump_cmd
+            self.log(f"MySQL root cmd: {mysql_root_cmd}")
+            self.log(f"mysqldump cmd:  {mysqldump_cmd}")
 
             # Create SqlBackup instance
             sql_backup = SqlBackup(
-                backup_user="backup",
+                backup_user=self.args.backup_user,
                 backup_host="localhost",
                 backup_dir=str(self.backup_dir),
                 mysql_root_script=mysql_root_cmd,
