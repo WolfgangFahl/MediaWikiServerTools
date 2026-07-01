@@ -313,6 +313,7 @@ class SqlBackup:
         """
         cmds = {
             "create temp dir": f"sudo mkdir -p {self.tmp_dir}",
+            "create today dir": f"sudo mkdir -p {self.today_dir}",
             "change permissions": f"sudo chmod 777 {self.tmp_dir}",
             "change owner": f"sudo chown {self.backup_user} {self.tmp_dir}",
         }
