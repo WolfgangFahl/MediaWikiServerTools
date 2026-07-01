@@ -32,6 +32,7 @@ class CronBackup(BaseCmd):
         """
         super().__init__(version)
         self.backup_dir = None
+        self.archive_dir = None
         self.log_file = None
         self.container = None
         self.full_backup = False
@@ -71,7 +72,13 @@ class CronBackup(BaseCmd):
         parser.add_argument(
             "--backup-dir",
             default="/var/backup/sqlbackup",
-            help="backup directory path [default: %(default)s]",
+            help="local backup directory (today/ + tmp/ dumps) [default: %(default)s]",
+        )
+        parser.add_argument(
+            "--archive-dir",
+            default=None,
+            help="directory for the dated .tgz archive + expiration; may be a "
+            "remote/mounted path (defaults to --backup-dir)",
         )
         parser.add_argument(
             "--log-file",
@@ -190,7 +197,7 @@ class CronBackup(BaseCmd):
             )
 
             expire_backups = ExpireBackups(
-                rootPath=str(self.backup_dir),
+                rootPath=str(self.archive_dir),
                 baseName="sql_backup",
                 ext=".tgz",
                 expiration=expiration,
@@ -218,7 +225,8 @@ class CronBackup(BaseCmd):
         exit_code = 1
         date_str = datetime.now().strftime("%Y-%m-%d")
         archive_name = f"sql_backup.{date_str}.tgz"
-        archive_path = self.backup_dir / archive_name
+        self.archive_dir.mkdir(parents=True, exist_ok=True)
+        archive_path = self.archive_dir / archive_name
 
         self.log(f"Creating archive {archive_name}...")
 
@@ -354,6 +362,9 @@ class CronBackup(BaseCmd):
 
             # Store configuration
             self.backup_dir = Path(args.backup_dir)
+            self.archive_dir = (
+                Path(args.archive_dir) if args.archive_dir else self.backup_dir
+            )
             self.log_file = Path(args.log_file)
             self.container = args.container
             self.full_backup = args.full
