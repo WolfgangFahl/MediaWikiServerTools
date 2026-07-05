@@ -16,7 +16,7 @@ from typing import List
 from basemkit.persistent_log import Log
 from tqdm import tqdm
 
-from mwstools_backend.remote import Remote
+from mwstools_backend.remote import Remote, RunConfig
 
 
 class SqlBackup:
@@ -34,6 +34,7 @@ class SqlBackup:
         verbose: bool = False,
         debug: bool = False,
         progress: bool = False,
+        timeout: float = 3600,
     ):
         """
         Initialize SQLBackup instance
@@ -57,7 +58,10 @@ class SqlBackup:
         self.verbose = verbose
         self.debug = debug
         self.progress = progress
-        self.remote = Remote(host=backup_host)
+        # SQL dumps of large DBs need far more than the RunConfig 10s default;
+        # honour a configurable timeout on every remote command (default 1h).
+        self.timeout = timeout
+        self.remote = Remote(host=backup_host, run_config=RunConfig(timeout=timeout))
         self.today_dir = self.backup_dir / "today"
         self.tmp_dir = self.backup_dir / "tmp"
 

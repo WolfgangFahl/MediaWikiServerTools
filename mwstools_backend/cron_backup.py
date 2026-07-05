@@ -149,6 +149,14 @@ class CronBackup(BaseCmd):
             help="number of yearly backups to keep [default: %(default)s]",
         )
 
+        # per-command timeout for the dumps (large DBs need far more than 10s)
+        parser.add_argument(
+            "--timeout",
+            type=float,
+            default=3600,
+            help="timeout in seconds for each SQL dump/command [default: %(default)s]",
+        )
+
         # Shell configuration
         parser.add_argument(
             "--profile", help="shell profile to source (e.g., ~/.zprofile)"
@@ -210,6 +218,7 @@ class CronBackup(BaseCmd):
             self.log("Expiration rules completed")
 
         except Exception as ex:
+            self.log(f"ERROR: {type(ex).__name__}: {ex}")
             self.handle_exception(ex)
             exit_code = 1
 
@@ -259,7 +268,15 @@ class CronBackup(BaseCmd):
             )
 
             cmd = " ".join(cmd_parts)
-            result = self.shell.run(cmd, text=True, debug=self.debug, tee=self.verbose)
+            # honour --timeout: the basemkit Shell.run default of 60 s truncates
+            # large archives (see issue #11 / the qn 2026-07-01 incident)
+            result = self.shell.run(
+                cmd,
+                text=True,
+                debug=self.debug,
+                tee=self.verbose,
+                timeout=self.args.timeout,
+            )
 
             if result.returncode == 0:
                 self.log(f"Archive {archive_name} created successfully")
@@ -270,6 +287,7 @@ class CronBackup(BaseCmd):
                 exit_code = 1
 
         except Exception as ex:
+            self.log(f"ERROR: {type(ex).__name__}: {ex}")
             self.handle_exception(ex)
             exit_code = 1
 
@@ -316,6 +334,7 @@ class CronBackup(BaseCmd):
                 verbose=self.verbose,
                 debug=self.debug,
                 progress=self.args.progress,
+                timeout=self.args.timeout,
             )
 
             # Initialize if needed
@@ -335,6 +354,7 @@ class CronBackup(BaseCmd):
                 exit_code = 1
 
         except Exception as ex:
+            self.log(f"ERROR: {type(ex).__name__}: {ex}")
             self.handle_exception(ex)
             exit_code = 1
 
@@ -392,6 +412,11 @@ class CronBackup(BaseCmd):
                         self.exit_code = result
 
                 handled = True
+                # BaseCmd.run() never reads self.exit_code and would exit 0 even
+                # after a failed backup (issue #11) — propagate via SystemExit,
+                # which BaseCmd.handle_exception maps to the process exit code.
+                if self.exit_code != 0:
+                    raise SystemExit(self.exit_code)
 
         return handled
 
@@ -410,12 +435,12 @@ def main(argv=None):
     # Create a version object
     class Version:
         name = "CronBackup"
-        version = "0.1.1"
+        version = "0.2.7"
         description = (
             "Database backup with expiration management to be started from cron"
         )
-        updated = "2025-12-23"
-        doc_url = "https://github.com/WolfgangFahl/pyWikiCMS"
+        updated = "2026-07-05"
+        doc_url = "https://github.com/WolfgangFahl/MediaWikiServerTools"
 
     exit_code = CronBackup.main(Version(), argv)
     return exit_code
