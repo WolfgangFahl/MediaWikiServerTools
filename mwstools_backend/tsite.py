@@ -21,7 +21,6 @@ from typing import Dict, Iterable, Iterator, List, TypeVar
 from basemkit.base_cmd import BaseCmd
 from basemkit.persistent_log import Log
 from basemkit.profiler import Profiler
-from mwstools_backend.version import Version
 from tqdm import tqdm
 from wikibot3rd.smw import SMWClient
 from wikibot3rd.wikiclient import WikiClient
@@ -31,6 +30,7 @@ from mwstools_backend.remote import Remote, RunConfig
 from mwstools_backend.server import Server, Servers
 from mwstools_backend.site import Site, WikiSite
 from mwstools_backend.sql_backup import SqlBackup
+from mwstools_backend.version import Version
 
 # enable generic types
 T = TypeVar("T")
@@ -69,7 +69,7 @@ class TransferTask:
     def __post_init__(self):
         self.force = self.args.force
         self.update = self.args.update
-        self.debug=self.args.debug
+        self.debug = self.args.debug
         self.timeout = self.args.timeout
         self.use_git = self.args.git
         self.wikiUser = WikiUser.ofWikiId(self.wiki_site.wikiId, lenient=True)
@@ -217,7 +217,9 @@ class TransferTask:
                 return False
             rsync_prof.time(f" {self.wiki_site.hostname}")
             result = True
-            if self.use_git:
+            if self.args.backup:
+                result = self.adapt_backup_server(site_path)
+            if result and self.use_git:
                 git_prof = Profiler("git commit", profile=self.args.profile)
                 proc = self.git_target(target_path=site_path)
                 if proc.returncode == 0:
@@ -225,6 +227,47 @@ class TransferTask:
                 else:
                     result = False
         return result
+
+    def backup_server_name(self) -> str:
+        """
+        the hostname of a backup copy: the --alias if given
+        else <name>-<target hostname>
+        """
+        alias = getattr(self.args, "alias", None)
+        if alias:
+            server_name = alias
+        else:
+            server_name = f"{self.wiki_site.name}-{self.target.hostname}"
+        return server_name
+
+    def adapt_backup_server(self, site_path: str) -> bool:
+        """
+        set $wgServer of the backup copy to its own name -
+        the only target-local setting of a copy (#18)
+
+        Args:
+            site_path: the site directory on the target
+
+        Returns:
+            True if the setting is in place
+        """
+        server_name = self.backup_server_name()
+        settings_path = f"{site_path}/LocalSettings.php"
+        wg_server = f"https://{server_name}"
+        sed_cmd = (
+            "sed -i -E "
+            f"'s#^([[:space:]]*[$]wgServer[[:space:]]*=[[:space:]]*).*$#\\1\"{wg_server}\";#' "
+            f"{settings_path}"
+        )
+        # base64 transport avoids quoting through the local and the ssh shell
+        b64 = base64.b64encode(sed_cmd.encode()).decode()
+        proc = self.target.remote.run(f"printf %s {b64!r} | base64 -d | sudo bash")
+        lines = self.target.remote.readlines(settings_path) or []
+        actual = WikiSite.getVarFromSettings("wgServer", lines)
+        ok = proc.returncode == 0 and actual == wg_server
+        marker = "✅" if ok else "❌"
+        print(f"{marker} $wgServer of the copy {settings_path}: {actual}")
+        return ok
 
     def get_wiki_sql(self):
         wiki = self.wiki_site
@@ -258,11 +301,15 @@ class TransferTask:
             remote_cmd = f"printf %s {b64!r} | base64 -d | {mysql_cmd}"
             proc = self.target.remote.run(remote_cmd)
             success = proc.returncode == 0
+            # never show the grant statement, it carries the db password
+            shown = name if name == "grant" else sql_cmd
             if success:
-                print(f"✅ {sql_cmd}:{proc.stdout}")
+                lines = proc.stdout.splitlines()
+                summary = proc.stdout if len(lines) <= 3 else f"{len(lines)} lines"
+                print(f"✅ {shown}:{summary}")
                 sql_results[name] = proc.stdout
             else:
-                print(f"❌ {sql_cmd}:{proc.stderr}")
+                print(f"❌ {shown}:{proc.stderr}")
                 break
         return sql_results
 
@@ -283,11 +330,15 @@ class TransferTask:
             ("show_tables", "SHOW TABLES", database),
         ]
         sql_results = self.run_sql_cmds(sql_cmds)
+        do_restore = False
         # ping means the database is accessible
         if "ping" in sql_results:
             result = True
+            # an existing database is refreshed only on --update (#16)
+            if "show_tables" in sql_results:
+                do_restore = bool(self.args.update)
             # if show_tables fails the database does not exist
-            if "show_tables" not in sql_results:
+            else:
                 # (name, sql, database)
                 sql_cmds = [
                     ("create_db", f"CREATE DATABASE IF NOT EXISTS `{database}`", None),
@@ -305,25 +356,21 @@ class TransferTask:
                 ]
                 sql_results = self.run_sql_cmds(sql_cmds)
                 # restore if update flag is set or no rev_count
-                do_restore = (
-                    result and self.args.update or "rev_count" not in sql_results
+                do_restore = bool(self.args.update) or "rev_count" not in sql_results
+            if do_restore:
+                restore_cmd = f"pv {self.target_backup_path} | {mysqlr} -D {database}"
+                # honor the user supplied --timeout for the (potentially long)
+                # SQL restore instead of the 10s RunConfig default (closes #6)
+                restore_run_config = RunConfig(timeout=self.timeout)
+                proc = self.target.remote.run(
+                    restore_cmd, run_config=restore_run_config
                 )
-                if do_restore:
-                    restore_cmd = (
-                        f"pv {self.target_backup_path} | {mysqlr} -D {database}"
-                    )
-                    # honor the user supplied --timeout for the (potentially long)
-                    # SQL restore instead of the 10s RunConfig default (closes #6)
-                    restore_run_config = RunConfig(timeout=self.timeout)
-                    proc = self.target.remote.run(
-                        restore_cmd, run_config=restore_run_config
-                    )
-                    success = proc.returncode == 0
-                    result = result and success
-                    if success:
-                        print(f"✅ restore:{proc.stdout}")
-                    else:
-                        print(f"❌ restore:{proc.stderr}")
+                success = proc.returncode == 0
+                result = result and success
+                if success:
+                    print(f"✅ restore {self.target_backup_path} into {database}")
+                else:
+                    print(f"❌ restore:{proc.stderr}")
         if result:
             sql_cmds = [
                 ("user_count", "SELECT COUNT(*) AS user_count FROM user;", database),
@@ -362,7 +409,8 @@ class TransferTask:
                 print("❌ Backup creation failed or still outdated.")
                 return False
 
-        if target_age:
+        age_diff_secs = 0
+        if target_age is not None:
             age_diff_secs = (target_age - source_age) * 86400
         # more than 1 minute difference
         if target_age is None or age_diff_secs > 60:
@@ -379,7 +427,8 @@ class TransferTask:
                     "chgrp": f"sudo chgrp {self.target.remote.gid} {self.target_base_path}",
                 }
             )
-            run_config = RunConfig(force_local=True, ignore_container=True)
+            # pull on the target server, not on the local machine (#17)
+            run_config = RunConfig(timeout=self.timeout, ignore_container=True)
             scp_cmd = f"scp -p {source_path} {target_path}"
             proc = self.target.remote.run(scp_cmd, run_config=run_config)
             result = proc.returncode == 0
@@ -450,7 +499,7 @@ class TransferTask:
         result = False
         server_name = f"{self.wiki_site.hostname}"
         if self.args.backup:
-            server_name = f"{self.wiki_site.name}-{self.target.hostname}"
+            server_name = self.backup_server_name()
         self.target.probe_apache_configs()
         # first check the configuration
         config_path = self.target.apache_configs.get(server_name)
@@ -530,19 +579,46 @@ class TransferSite:
                 for filepath in files:
                     Checks.check_age(server.remote, filepath, 1.0)
 
+    def check_backup(self):
+        """
+        check the backup state of the selected wikis:
+        the age of the full SQL dump of each selected wiki
+        on each selected server (#12)
+        """
+        servers = self.get_selected_servers_list()
+        for wiki in self.get_selected_wikis():
+            for server in servers:
+                filepath = f"{server.sql_backup_path}/today/{wiki.database}_full.sql"
+                age = Checks.check_age(server.remote, filepath, 1.0)
+                if age is None:
+                    print(f"{server.remote.host}:{filepath} ❌ missing")
+
     def check_database(self):
         """
         check the database access
         """
         index = 0
+        target_server = self.servers.servers.get(self.target) if self.target else None
         for wiki in self.get_selected_wikis():
             if wiki.localSettings is None:
                 wiki.configure_of_settings()
+            index += 1
+            print(
+                f"{index:2d}:{wiki.hostname} {wiki.localSettings}: {wiki.database} vs {wiki.database_setting} dbUser:{wiki.dbUser}"
+            )
+            # the copy of the wiki on the target uses the same site directory (#14)
+            if target_server is not None and target_server.sitedir:
+                settings_path = (
+                    f"{target_server.sitedir}/{wiki.hostname}/LocalSettings.php"
+                )
+                lines = target_server.remote.readlines(settings_path) or []
+                copy_db = WikiSite.getVarFromSettings("wgDBname", lines)
+                copy_user = WikiSite.getVarFromSettings("wgDBuser", lines)
+                copy_server = WikiSite.getVarFromSettings("wgServer", lines)
                 index += 1
                 print(
-                    f"{index:2d}:{wiki.database} vs {wiki.database_setting} dbUser:{wiki.dbUser}"
+                    f"{index:2d}:{copy_server} {target_server.hostname}:{settings_path}: {copy_db} dbUser:{copy_user}"
                 )
-                pass
 
     def check_endpoints(self):
         """
@@ -562,6 +638,16 @@ class TransferSite:
         for wiki in self.get_selected_wikis():
             index += 1
             self.check_remote(wiki.remote, index)
+        # the selected servers and the copy site named by --alias (#14)
+        for server in self.get_selected_servers():
+            index += 1
+            self.check_remote(server.remote, index)
+        if self.args.alias:
+            index += 1
+            alias_site = Site(self.args.alias)
+            proc = alias_site.ping()
+            ok = Site.state_symbol(proc.returncode == 0)
+            print(f"{index:02d}:{self.args.alias:<26} {ok}")
 
     def get_wiki_user(self, wikisite: WikiSite, purpose: str):
         """
@@ -618,7 +704,9 @@ class TransferSite:
                 "php": "php -v",
             }
             remote.log.do_log = self.args.debug
-            procs = remote.run_cmds(cmds, stop_on_error=False)
+            # continue after a failing command so every component is reported (#13)
+            run_config = RunConfig(stop_on_error=False, do_log=self.args.debug)
+            procs = remote.run_cmds(cmds, run_config=run_config)
             results = {}
             for key, proc in procs.items():
                 if proc.returncode == 0:
@@ -1006,7 +1094,7 @@ class TransferSiteCmd(BaseCmd):
             handled = True
         if args.check_database:
             tsite.check_database()
-            handlet = True
+            handled = True
         if args.check_endpoints:
             tsite.check_endpoints()
             handled = True
